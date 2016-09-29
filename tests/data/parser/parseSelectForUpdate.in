@@ -1,0 +1,1 @@
+SELECT * FROM test FOR /* the FOR UPDATE endOption */ UPDATE;

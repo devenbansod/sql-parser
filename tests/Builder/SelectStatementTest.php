@@ -53,4 +53,33 @@ class SelectStatementTest extends TestCase
             $stmt->build()
         );
     }
+
+    public function testBuilderEndOptions()
+    {
+        /* Assertion 1 */
+        $parser = new Parser(
+            'SELECT sgu.id, sgu.email_address FROM `sf_guard_user` sgu '
+            . 'FOR UPDATE'
+        );
+        $stmt = $parser->statements[0];
+
+        $this->assertEquals(
+            'SELECT  sgu.id, sgu.email_address FROM `sf_guard_user` AS `sgu` '
+            . 'FOR UPDATE ',
+            $stmt->build()
+        );
+
+        /* Assertion 2 */
+        $parser = new Parser(
+            'SELECT sgu.id, sgu.email_address FROM `sf_guard_user` sgu '
+            . 'LOCK IN SHARE MODE'
+        );
+        $stmt = $parser->statements[0];
+
+        $this->assertEquals(
+            'SELECT  sgu.id, sgu.email_address FROM `sf_guard_user` AS `sgu` '
+            . 'LOCK IN SHARE MODE ',
+            $stmt->build()
+        );
+    }
 }

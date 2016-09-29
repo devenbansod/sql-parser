@@ -196,6 +196,13 @@ class SelectStatement extends Statement
     public $union = array();
 
     /**
+     * Options at the end - [FOR UPDATE | LOCK IN SHARE MODE]
+     *
+     * @var string
+     */
+    public $endOptions;
+
+    /**
      * Gets the clauses of this statement.
      *
      * @return array

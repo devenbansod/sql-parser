@@ -183,6 +183,12 @@ abstract class Statement
             }
         }
 
+        if (get_class($this) === 'SqlParser\Statements\SelectStatement') {
+            if (! empty($this->endOptions)) {
+                $query .= $this->endOptions . ' ';
+            }
+        }
+
         return $query;
     }
 
@@ -255,28 +261,79 @@ abstract class Statement
 
             $lastIdx = $list->idx;
 
-            // ON DUPLICATE KEY UPDATE ...
-            // has to be parsed in parent statement (INSERT or REPLACE)
-            // so look for it and break
-            if (get_class($this) === 'SqlParser\Statements\SelectStatement'
-                && $token->value === 'ON'
-            ) {
-                ++$list->idx; // Skip ON
+            if (get_class($this) === 'SqlParser\Statements\SelectStatement') {
+                // ON DUPLICATE KEY UPDATE ...
+                // has to be parsed in parent statement (INSERT or REPLACE)
+                // so look for it and break
+                if ($token->value === 'ON') {
+                    ++$list->idx; // Skip ON
 
-                // look for ON DUPLICATE KEY UPDATE
-                $first = $list->getNextOfType(Token::TYPE_KEYWORD);
-                $second = $list->getNextOfType(Token::TYPE_KEYWORD);
-                $third = $list->getNextOfType(Token::TYPE_KEYWORD);
+                    // look for ON DUPLICATE KEY UPDATE
+                    $first = $list->getNextOfType(Token::TYPE_KEYWORD);
+                    $second = $list->getNextOfType(Token::TYPE_KEYWORD);
+                    $third = $list->getNextOfType(Token::TYPE_KEYWORD);
 
-                if ($first && $second && $third
-                    && $first->value === 'DUPLICATE'
-                    && $second->value === 'KEY'
-                    && $third->value === 'UPDATE'
-                ) {
-                    $list->idx = $lastIdx;
-                    break;
+                    if ($first && $second && $third
+                        && $first->value === 'DUPLICATE'
+                        && $second->value === 'KEY'
+                        && $third->value === 'UPDATE'
+                    ) {
+                        $list->idx = $lastIdx;
+                        break;
+                    }
+                } elseif ($token->value === 'FOR') {
+                    // 'SELECT ... FOR UPDATE' has to be parsed
+                    ++$list->idx; // Skip FOR
+                    $next = $list->getNextOfType(Token::TYPE_KEYWORD);
+                    if ($next->value === 'UPDATE'
+                        && empty($this->endOptions)
+                    ) {
+                        $this->endOptions = 'FOR UPDATE';
+                        continue;
+                    } elseif ($next !== null
+                        && $next->value === 'UPDATE'
+                        && ! empty($this->endOptions)
+                    ) {
+                        $token = $list->tokens[$lastIdx];
+                        $parser->error(
+                            __('Unexpected keyword.'),
+                            $token
+                        );
+
+                        $list->idx = $lastIdx;
+                        continue;
+                    }
+                } elseif ($token->value === 'LOCK') {
+                    // 'SELECT ... LOCK IN SHARE MODE' has to be parsed
+                    ++$list->idx; // Skip IN
+
+                    // look for IN SHARED MODE
+                    $first = $list->getNextOfType(Token::TYPE_KEYWORD);
+                    $second = $list->getNextOfType(Token::TYPE_KEYWORD);
+                    $third = $list->getNextOfType(Token::TYPE_KEYWORD);
+
+                    if ($first && $second && $third
+                        && $first->value === 'IN'
+                        && $second->value === 'SHARE'
+                        && $third->value === 'MODE'
+                    ) {
+                        if (empty($this->endOptions)) {
+                            $this->endOptions = 'LOCK IN SHARE MODE';
+                            continue;
+                        } else {
+                            $token = $list->tokens[$lastIdx];
+                            $parser->error(
+                                __('Unexpected keyword'),
+                                $token
+                            );
+
+                            $list->idx = $lastIdx;
+                            continue;
+                        }
+                    }
                 }
             }
+
             $list->idx = $lastIdx;
 
             /**

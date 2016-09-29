@@ -1,0 +1,1 @@
+SELECT * FROM test LOCK /* the LOCK IN SHARE MODE endOption */ IN SHARE MODE;

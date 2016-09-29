@@ -33,6 +33,8 @@ class SelectStatementTest extends TestCase
             array('parser/parseSelect4'),
             array('parser/parseSelectErr1'),
             array('parser/parseSelectNested'),
+            array('parser/parseSelectForUpdate'),
+            array('parser/parseSelectLockInSharedMode'),
         );
     }
 }
