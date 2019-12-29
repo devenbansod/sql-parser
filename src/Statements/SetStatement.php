@@ -58,7 +58,11 @@ class SetStatement extends Statement
         'PASSWORD' => array(
             3,
             'expr',
-        )
+        ),
+        'SESSION' => 3,
+        'GLOBAL' => 3,
+        '@@GLOBAL' => 3,
+        '@@SESSION' => 3,
     );
 
     public static $END_OPTIONS = array(
